@@ -3,11 +3,9 @@
 
 #define START_PACKET_ID 0xFFFF
 #define END_PACKET_ID 0xFFFF
-
 #define DATA_PACKET 0xFFF1
 #define ACK_PACKET 0xFFF2
 #define REJECT_PACKET 0xFFF3
-
 #define REJECT_OUT_OF_SEQUENCE 0xFFF4
 #define REJECT_LENGTH_MISMATCH 0xFFF5
 #define REJECT_END_OF_PACKET_MISSING 0xFFF6
@@ -23,32 +21,32 @@ struct Payload
 
 struct Data_Packets
 {
-    unsigned short start_packet_id;
-    char client_id;
-    unsigned short packet_type;
-    char segment_no;
-    char length;
     struct Payload payload;
     unsigned short end_packet_id;
+    unsigned short start_packet_id;
+    unsigned short packet_type;
+    char client_id;
+    char segment_no;
+    char length;
 };
 
 struct Ack_Packets
 {
-    unsigned short start_packet_id;
-    char client_id;
     unsigned short packet_type;
     char received_segment_no;
+    unsigned short start_packet_id;
     unsigned short end_packet_id;
+    char client_id;
 };
 
 struct Reject_Packets
 {
-    unsigned short start_packet_id;
-    char client_id;
     unsigned short packet_type;
     unsigned short reject_sub_code;
     char received_segment_no;
+    unsigned short start_packet_id;
     unsigned short end_packet_id;
+    char client_id;
 };
 
 /**
@@ -56,7 +54,7 @@ struct Reject_Packets
  * Input params are data_packet and buffer
  * Output is the length of the data in the buffer
  **/
-int buildDataPacket(struct Data_Packets data_packet, char *buffer)
+int getPacketLength(struct Data_Packets data_packet, char *buffer)
 {
 
     int buffer_length = 0;
@@ -234,36 +232,6 @@ int decodeAckPacket(char *buffer, struct Ack_Packets *ack_packet)
 }
 
 /**
- * This method decodes data in the buffer into the reject packet
- * Input params are buffer and reject_packet
- * Output is an int - corresponding reject sub code
- **/
-int decodeRejectPacket(char *buffer, struct Reject_Packets *reject_packet)
-{
-
-    int buffer_length = 0;
-
-    memcpy(&(reject_packet->start_packet_id), buffer + buffer_length, 2);
-    buffer_length += 2;
-
-    reject_packet->client_id = buffer[buffer_length];
-    buffer_length += 1;
-
-    memcpy(&(reject_packet->packet_type), buffer + buffer_length, 2);
-    buffer_length += 2;
-
-    memcpy(&(reject_packet->reject_sub_code), buffer + buffer_length, 2);
-    buffer_length += 2;
-
-    reject_packet->received_segment_no = buffer[buffer_length];
-    buffer_length += 1;
-
-    memcpy(&(reject_packet->end_packet_id), buffer + buffer_length, 2);
-
-    return reject_packet->reject_sub_code;
-}
-
-/**
  * This function initializes reject_packet with values from data_packet
  * Input params are data_packet, reject_packet and reject_sub_code
  **/
@@ -295,22 +263,52 @@ void initializeRejectPacket(struct Data_Packets data_packet, struct Reject_Packe
     printf("REJECT CODE - %x\n", reject_packet->reject_sub_code);
 }
 
-void printRejectCode(int reject_code)
+/**
+ * This method resolve data in the buffer into the reject packet
+ * Input params reject_packet and buffer and 
+ * Output is an int - corresponding reject sub code
+ **/
+void resolvePacket(struct Reject_Packets *reject_packet, char *buffer)
 {
 
-    switch (reject_code)
+    int buffer_length = 0;
+
+    memcpy(&(reject_packet->start_packet_id), buffer + buffer_length, 2);
+    buffer_length += 2;
+
+    reject_packet->client_id = buffer[buffer_length];
+    buffer_length += 1;
+
+    memcpy(&(reject_packet->packet_type), buffer + buffer_length, 2);
+    buffer_length += 2;
+
+    memcpy(&(reject_packet->reject_sub_code), buffer + buffer_length, 2);
+    buffer_length += 2;
+
+    reject_packet->received_segment_no = buffer[buffer_length];
+    buffer_length += 1;
+
+    memcpy(&(reject_packet->end_packet_id), buffer + buffer_length, 2);
+}
+
+char *getRejectDescription(int reject_sub_code)
+{
+    switch (reject_sub_code)
     {
     case 0xfff4:
-        printf("REJECT_OUT_OF_SEQUENCE\n");
+        return "REJECT_OUT_OF_SEQUENCE";
         break;
     case 0xfff5:
-        printf("REJECT_LENGTH_MISMATCH\n");
+        return "REJECT_LENGTH_MISMATCH";
         break;
     case 0xfff6:
-        printf("REJECT_END_OF_PACKET_MISSING\n");
+        return "REJECT_END_OF_PACKET_MISSING";
         break;
     case 0xfff7:
-        printf("REJECT_DUPLICATE_PACKET\n");
+        return "REJECT_DUPLICATE_PACKET";
+        break;
+    default:
+        return "Unkown Reject Sub Code";
         break;
     }
 }

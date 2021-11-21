@@ -1,20 +1,20 @@
-#include <stdio.h>
-#include <errno.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
+
 #include <string.h>
 #include "Tool.h"
+#include "Server.h"
 #include "Packet.h"
+
 int main()
 {
-    int serverSocket;
+    int server_socket;
     char buffer[1024];
     int current_segment_number = 0;
+    int input;
+
     struct sockaddr_in server_addr;
     struct Data_Packets data_packet;
     struct Ack_Packets ack_packet;
     struct Reject_Packets reject_packet;
-    int input;
 
     /*---- Show the instruction in console ----*/
     printf("\nPress 0 to simulate normal transmission\n");
@@ -24,19 +24,21 @@ int main()
     scanf("%d", &input);
 
     /*---- Init the socket ----*/
-    serverSocket = socket(AF_INET, SOCK_DGRAM, 0);
+    server_socket = socket(AF_INET, SOCK_DGRAM, 0);
 
-    /*---- Configure server address struct ----*/
-    memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(PORT_NO);
-    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    if (server_socket < 0)
+    {
+        error("ERROR opening socket");
+    }
+
+    /*---- Initial server address ----*/
+    server_addr = GetServerAddress(PORT_NO);
 
     /*---- Bind the address struct to the socket ----*/
-    bind(serverSocket, (struct sockaddr *)&server_addr, sizeof(server_addr));
+    bind(server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr));
 
     struct sockaddr sender;
-    socklen_t sendsize = sizeof(sender);
+    socklen_t send_size = sizeof(sender);
     memset(&sender, 0, sizeof(sender));
 
     // Start to listen for packets from client
@@ -44,7 +46,7 @@ int main()
     {
         int packet_length = 0;
 
-        recvfrom(serverSocket, buffer, sizeof(buffer), 0, &sender, &sendsize);
+        recvfrom(server_socket, buffer, sizeof(buffer), 0, &sender, &send_size);
 
         if (input == 0)
         {
@@ -105,7 +107,7 @@ int main()
             }
 
             // Send ACK or REJECT packet to client.
-            sendto(serverSocket, buffer, packet_length, 0, (struct sockaddr *)&sender, sendsize);
+            sendto(server_socket, buffer, packet_length, 0, (struct sockaddr *)&sender, send_size);
 
             printf("\n\n");
         }
