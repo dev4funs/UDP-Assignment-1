@@ -3,9 +3,9 @@
 #include <netinet/in.h>
 #include "Packet.h"
 
-struct Data_Packets GenerateDataPacketToSend(char segment_no, char length, char payload_length, unsigned short end_packet_id)
+struct Data_Packet GenerateDataPacketToSend(char segment_no, char length, char payload_length, unsigned short end_packet_id)
 {
-  struct Data_Packets data_packet;
+  struct Data_Packet data_packet;
   data_packet.start_packet_id = START_PACKET_ID;
   data_packet.client_id = 24;
   data_packet.packet_type = DATA_PACKET;
@@ -53,8 +53,8 @@ void receiveHandler(int client_socket, struct sockaddr_in address, int packet_le
     {
       // Message Received
       // Determine whether the received packet is ACK or REJECT
-      struct Reject_Packets reject_packet;
-      resolvePacket(&reject_packet, response_buffer);
+      struct Reject_Packet reject_packet;
+      initRejectPacketFromBuffer(&reject_packet, response_buffer);
 
       if (reject_packet.packet_type == ACK_PACKET)
       {

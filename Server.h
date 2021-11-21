@@ -2,13 +2,16 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-struct sockaddr_in GetServerAddress(int port_no)
+#include "Packet.h"
+
+struct Ack_Packet generateAckPacket(char segment_no)
 {
-  struct sockaddr_in address;
-  memset(&address, 0, sizeof(address));
-  address.sin_family = AF_INET;
-  // htons() which converts a port number in host byte order to a port number in network byte order
-  address.sin_port = htons(port_no);
-  address.sin_addr.s_addr = htonl(INADDR_ANY);
-  return address;
+  struct Ack_Packet ack_packet;
+  ack_packet.start_packet_id = START_PACKET_ID;
+  ack_packet.client_id = 24;
+  ack_packet.packet_type = ACK_PACKET;
+  ack_packet.received_segment_no = segment_no;
+  ack_packet.end_packet_id = END_PACKET_ID;
+
+  return ack_packet;
 };

@@ -2,7 +2,6 @@
 #include <string.h>
 #include <sys/time.h>
 #include "Client.h"
-#include "Server.h"
 #include "Tool.h"
 
 enum Input
@@ -21,7 +20,7 @@ int main()
     char buffer[1024];
     int input;
 
-    struct Data_Packets data_packet;
+    struct Data_Packet data_packet;
     struct sockaddr_in server_address;
 
     /*---- Show the instruction in console ----*/
@@ -85,7 +84,7 @@ int main()
             }
         }
 
-        int packet_length = getPacketLength(data_packet, buffer);
+        int packet_length = initPacketFromBuffer(data_packet, buffer);
 
         printf("-----------------------------------------------------\n");
         printf("Packet %d Sent: \n", segment_no);
