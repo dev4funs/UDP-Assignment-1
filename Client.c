@@ -3,51 +3,58 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <sys/time.h>
-#include <errno.h>
-#include "packet.h"
 
-void assignInputToDataPacket(struct data_packets *data_packet, char segment_number, char length, char payload_length, unsigned short end_packet_id);
-void receivePacket(int client_socket, struct sockaddr_in serverAddress, char *req_buffer, int packet_length);
+#include "Packet.h"
+
+static int PAYLOAD_LENGTH = 5;
+
+// declare
+void AssignInputToDataPacket(struct Data_Packets *data_packet, char segment_number, char length, char payload_length, unsigned short end_packet_id);
+void receivePacket(int client_socket, struct sockaddr_in address, char *req_buffer, int packet_length);
+struct sockaddr_in GetServerAddress(int port_no);
 
 int main()
 {
     // init the parameters
-    int clientsocket;
-    struct sockaddr_in serverAddress;
-    struct data_packets data_packet;
-    struct ack_packets ack_packet;
+    int client_socket;
+    struct sockaddr_in server_address;
+    struct Data_Packets data_packet;
+    struct Ack_Packets ack_packet;
     char buffer[1024];
     int segment_number = 1;
     int input;
 
+    /*---- Show the instruction in console ----*/
     printf("\nPress 0 to send 5 correct packets\n");
     printf("\nPress 1 to send 1 correct packet and 4 wrong packets\nYour input = ");
 
+    /*---- Get the Inputs from console ----*/
     scanf("%d", &input);
+
     // Create client socket
-    clientsocket = socket(AF_INET, SOCK_DGRAM, 0);
+    client_socket = socket(AF_INET, SOCK_DGRAM, 0);
 
-    // Initialize Server socket
-    memset(&serverAddress, 0, sizeof(serverAddress));
-    serverAddress.sin_family = AF_INET;
-    serverAddress.sin_port = htons(7891);
-    serverAddress.sin_addr.s_addr = htonl(INADDR_ANY);
-
-    // Set timer options on socket
+    // Set timer options on socket to 3 seconds
     struct timeval timeout = {3, 0};
-    if (setsockopt(clientsocket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0)
+
+    // init the socket optional settings
+    // setsockopt if success return 0, if fail return -1
+    if (setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == -1)
     {
-        perror("Error");
+        // handle the error
+        error(" setsockopt Error !");
     }
+
+    // Init server address
+    server_address = GetServerAddress(PORT_NO);
 
     int packet_number = 1;
     while (packet_number <= 5)
     {
-
         if (input == 0)
         {
             // Initialize data packet with  all 5 correct packets
-            assignInputToDataPacket(&data_packet, segment_number, 5, 5, END_PACKET_ID);
+            AssignInputToDataPacket(&data_packet, segment_number, PAYLOAD_LENGTH, PAYLOAD_LENGTH, END_PACKET_ID);
         }
         else if (input == 1)
         {
@@ -56,23 +63,23 @@ int main()
             {
             case 1:
                 // Initialize data packet with 1 correct packet and 4 error packets
-                assignInputToDataPacket(&data_packet, segment_number, 5, 5, END_PACKET_ID);
+                AssignInputToDataPacket(&data_packet, segment_number, PAYLOAD_LENGTH, PAYLOAD_LENGTH, END_PACKET_ID);
                 break;
             case 2:
                 // Assign wrong length for 2nd packet
-                assignInputToDataPacket(&data_packet, segment_number, 8, 5, END_PACKET_ID);
+                AssignInputToDataPacket(&data_packet, segment_number, 8, PAYLOAD_LENGTH, END_PACKET_ID);
                 break;
             case 3:
                 // NULL end packet id for 3rd packet
-                assignInputToDataPacket(&data_packet, segment_number, 5, 5, '\0');
+                AssignInputToDataPacket(&data_packet, segment_number, PAYLOAD_LENGTH, PAYLOAD_LENGTH, '\0');
                 break;
             case 4:
                 // Duplicate packet
-                assignInputToDataPacket(&data_packet, segment_number - 1, 5, 5, END_PACKET_ID);
+                AssignInputToDataPacket(&data_packet, segment_number - 1, PAYLOAD_LENGTH, PAYLOAD_LENGTH, END_PACKET_ID);
                 break;
             case 5:
                 // Assign wrong sequence number for 5th packet
-                assignInputToDataPacket(&data_packet, segment_number + 10, 5, 5, END_PACKET_ID);
+                AssignInputToDataPacket(&data_packet, segment_number + 10, PAYLOAD_LENGTH, PAYLOAD_LENGTH, END_PACKET_ID);
                 break;
             }
         }
@@ -80,13 +87,13 @@ int main()
         int packet_length = buildDataPacket(data_packet, buffer);
 
         // Send data packet to server
-        sendto(clientsocket, buffer, packet_length, 0, (struct sockaddr *)&serverAddress, sizeof serverAddress);
+        sendto(client_socket, buffer, packet_length, 0, (struct sockaddr *)&server_address, sizeof server_address);
 
         printf("Packet %d Sent: \n", packet_number);
-
-        receivePacket(clientsocket, serverAddress, buffer, packet_length);
-
+        receivePacket(client_socket, server_address, buffer, packet_length);
         printf("\n\n");
+
+        /*---- increase the packet number and segment number ----*/
         packet_number++;
         segment_number++;
     }
@@ -94,7 +101,7 @@ int main()
     return 0;
 }
 
-void assignInputToDataPacket(struct data_packets *data_packet, char segment_number, char length, char payload_length, unsigned short end_packet_id)
+void AssignInputToDataPacket(struct Data_Packets *data_packet, char segment_number, char length, char payload_length, unsigned short end_packet_id)
 {
 
     data_packet->start_packet_id = START_PACKET_ID;
@@ -107,15 +114,17 @@ void assignInputToDataPacket(struct data_packets *data_packet, char segment_numb
     data_packet->end_packet_id = end_packet_id;
 }
 
-void receivePacket(int client_socket, struct sockaddr_in serverAddress, char *req_buffer, int packet_length)
+void receivePacket(int client_socket, struct sockaddr_in address, char *req_buffer, int packet_length)
 {
     // Receive ACK or REJECT packet from server
     char ack_buffer[1024];
     struct sockaddr sender;
-    struct reject_packets reject_packet;
+    struct Reject_Packets reject_packet;
 
     socklen_t sendsize = sizeof(sender);
     memset(&sender, 0, sizeof(sender));
+
+    /*---- Bind the address struct to the socket ----*/
     bind(client_socket, (struct sockaddr *)&sender, sendsize);
 
     int retry_counter = 0;
@@ -153,7 +162,17 @@ void receivePacket(int client_socket, struct sockaddr_in serverAddress, char *re
             }
             retry_counter++;
             printf("Trying to retransmit..... Attempt no. %d\n", retry_counter);
-            sendto(client_socket, req_buffer, packet_length, 0, (struct sockaddr *)&serverAddress, sizeof serverAddress);
+            sendto(client_socket, req_buffer, packet_length, 0, (struct sockaddr *)&address, sizeof address);
         }
     }
 }
+
+struct sockaddr_in GetServerAddress(int port_no)
+{
+    struct sockaddr_in address;
+    memset(&address, 0, sizeof(address));
+    address.sin_family = AF_INET;
+    address.sin_port = htons(PORT_NO);
+    address.sin_addr.s_addr = htonl(INADDR_ANY);
+    return address;
+};

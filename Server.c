@@ -3,40 +3,43 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <string.h>
-#include "packet.h"
-
+#include "Tool.h"
+#include "Packet.h"
 int main()
 {
     int serverSocket;
     char buffer[1024];
     int current_segment_number = 0;
-    struct sockaddr_in serverAddr;
-    struct data_packets data_packet;
-    struct ack_packets ack_packet;
-    struct reject_packets reject_packet;
+    struct sockaddr_in server_addr;
+    struct Data_Packets data_packet;
+    struct Ack_Packets ack_packet;
+    struct Reject_Packets reject_packet;
     int input;
 
+    /*---- Show the instruction in console ----*/
     printf("\nPress 0 to simulate normal transmission\n");
     printf("\nPress 1 to simulate re-transmission\nYour input = ");
 
+    /*---- Get the Inputs from console ----*/
     scanf("%d", &input);
 
+    /*---- Init the socket ----*/
     serverSocket = socket(AF_INET, SOCK_DGRAM, 0);
 
     /*---- Configure server address struct ----*/
-    memset(&serverAddr, 0, sizeof(serverAddr));
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(7891);
-    serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(PORT_NO);
+    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
     /*---- Bind the address struct to the socket ----*/
-    bind(serverSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr));
+    bind(serverSocket, (struct sockaddr *)&server_addr, sizeof(server_addr));
 
     struct sockaddr sender;
     socklen_t sendsize = sizeof(sender);
     memset(&sender, 0, sizeof(sender));
 
-    // Listening for packets from client indefinitely
+    // Start to listen for packets from client
     while (1)
     {
         int packet_length = 0;
