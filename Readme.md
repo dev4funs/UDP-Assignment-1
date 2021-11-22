@@ -1,14 +1,14 @@
 Compiling Instructions:-
 
 Compile each file on seperate terminals
-gcc Server.c -o ./s.out
-gcc Client.c -o ./c.out
+gcc Server.c -o ./server.out
+gcc Client.c -o ./client.out
 
 Run Server
-./s.out
+./server.out
 
 Run Client
-./c.out
+./client.out
 
 ---
 
