@@ -1,23 +1,19 @@
-Compiling Instructions:-
+#### Compile Command
 
-Compile each file on seperate terminals
-gcc Server.c -o ./server.out
-gcc Client.c -o ./client.out
+```bash
+gcc Server.c -o ./server.out && gcc Client.c -o ./client.out
 
-Run Server
+# Run Server
 ./server.out
 
-Run Client
+# Run Client
 ./client.out
+```
 
 ---
 
-When server is run, if user presses 0, server will respond immediately to packets received from client
+#### Client Tutorial
 
-When server is run, if user presses 1, server will not respond to first packet received from client, client will retransmit the packet and server will respond with ACK
+- user presses 0, Client will send 5 correct packets to server
 
----
-
-When client is run, if user presses 0, 5 correct packets will be sent to server
-
-When client is run, if user presses 1, 1 correct packet and 4 wrong packets are sent to server, server responds with ACK and the corresponding REJECT packets
+- user presses 1, Client will send 1 correct packet and 4 wrong packets to server
