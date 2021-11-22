@@ -49,14 +49,8 @@ struct Ack_Packet
     char client_id;
 };
 
-/**
- * This function builds the buffer to be sent using the data in the data_packet 
- * Input params are data_packet and buffer
- * Output is the length of the data in the buffer
- **/
 int initPacketFromBuffer(struct Data_Packet data_packet, char *buffer)
 {
-
     int buffer_length = 0;
 
     memcpy(&buffer[buffer_length], &data_packet.start_packet_id, 2);
@@ -92,7 +86,6 @@ int initPacketFromBuffer(struct Data_Packet data_packet, char *buffer)
  **/
 int generateBufferFromAckPacket(struct Ack_Packet ack_packet, char *buffer)
 {
-
     int buffer_length = 0;
 
     memcpy(&buffer[buffer_length], &ack_packet.start_packet_id, 2);
@@ -148,11 +141,6 @@ int generateBufferFromRejectPacket(struct Reject_Packet reject_packet, char *buf
     return buffer_length;
 }
 
-/**
- * This method decodes data in the buffer into the data packet
- * Input params are buffer and data_packet
- * Output is an int - 0 or END_PACKET_MISSING flag
- **/
 struct Data_Packet generateDataPacketFromBuffer(char *buffer)
 {
     struct Data_Packet data_packet;
@@ -197,10 +185,6 @@ struct Data_Packet generateDataPacketFromBuffer(char *buffer)
     return data_packet;
 }
 
-/**
- * This function initializes reject_packet with values from data_packet
- * Input params are data_packet, reject_packet and reject_sub_code
- **/
 struct Reject_Packet generateRejectPacket(char segment_no, int reject_sub_code)
 {
     struct Reject_Packet reject_packet;
@@ -213,11 +197,6 @@ struct Reject_Packet generateRejectPacket(char segment_no, int reject_sub_code)
     return reject_packet;
 }
 
-/**
- * This method resolve data in the buffer into the reject packet
- * Input params reject_packet and buffer and 
- * Output is an int - corresponding reject sub code
- **/
 void initRejectPacketFromBuffer(struct Reject_Packet *reject_packet, char *buffer)
 {
 

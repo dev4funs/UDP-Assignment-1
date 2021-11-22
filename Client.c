@@ -92,7 +92,6 @@ int main()
         sendto(client_socket, buffer, packet_length, 0, (struct sockaddr *)&server_address, sizeof server_address);
         receiveHandler(client_socket, server_address, packet_length, buffer);
 
-        /*---- increase the segment number ----*/
         segment_no++;
     }
 
